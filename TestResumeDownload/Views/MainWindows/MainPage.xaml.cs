@@ -1,10 +1,10 @@
 using Microsoft.UI.Xaml.Controls;
 
-using TestResumeDownload.ViewModels;
+using TestResumeDownload.ViewModels.MainWindows;
 
 namespace TestResumeDownload.Views.MainWindows;
 
-public sealed partial class MainPage : Page
+internal sealed partial class MainPage : Page
 {
 	public MainPageViewModel ViewModel
 	{

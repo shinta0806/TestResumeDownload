@@ -1,8 +1,6 @@
-using TestResumeDownload.Views;
-
 namespace TestResumeDownload.Views.MainWindows;
 
-public sealed partial class MainWindow : WindowEx
+internal sealed partial class MainWindow : WindowEx
 {
     public MainWindow()
     {
@@ -10,6 +8,5 @@ public sealed partial class MainWindow : WindowEx
 
         AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets/WindowIcon.ico"));
         Content = new MainPage();
-        Title = "AppDisplayName";
     }
 }

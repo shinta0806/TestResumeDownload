@@ -5,21 +5,40 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
+	Loaded="{x:Bind ViewModel.PageLoaded}"
     mc:Ignorable="d">
 
 	<StackPanel Margin="20" >
 
 		<!-- URL -->
 		<StackPanel Orientation="Horizontal" >
-			<TextBlock Text="URL：" VerticalAlignment="Center" />
-			<TextBox Text="" Width="200" />
+			<TextBlock Text="URL：" Width="130" HorizontalTextAlignment="Right" VerticalAlignment="Center" />
+			<TextBox Text="{x:Bind ViewModel.Url, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="400" />
+		</StackPanel>
+
+		<!-- ダウンロードフォルダー -->
+		<StackPanel Orientation="Horizontal" Margin="0,10,0,0" >
+			<TextBlock Text="ダウンロードフォルダー：" Width="130" HorizontalTextAlignment="Right" VerticalAlignment="Center" />
+			<TextBox Text="{x:Bind ViewModel.DestFolder, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="400" />
 		</StackPanel>
 
 		<!-- ダウンロードサイズ -->
-		<StackPanel Orientation="Horizontal" >
-			<TextBlock Text="ダウンロードサイズ：" VerticalAlignment="Center" />
-			<TextBox Text="" Width="50" />
+		<StackPanel Orientation="Horizontal" Margin="0,10,0,0" >
+			<TextBlock Text="ダウンロードサイズ：" Width="130" HorizontalTextAlignment="Right" VerticalAlignment="Center" />
+			<TextBox Text="{x:Bind ViewModel.DownloadSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="50" MinWidth="50" TextAlignment="Right" />
+			<TextBlock Text="MB" VerticalAlignment="Center" Margin="10,0,0,0" />
 		</StackPanel>
+
+		<RelativePanel Margin="0,10,0,0" >
+			
+			<!-- プログレスバー -->
+			<ProgressBar RelativePanel.AlignLeftWithPanel="True" Margin="0,0,20,0" 
+						 RelativePanel.LeftOf="ButtonDownload" RelativePanel.AlignVerticalCenterWithPanel="True" />
+			
+			<!-- ダウンロードボタン -->
+			<Button Name="ButtonDownload" Content="ダウンロード" Style="{StaticResource AccentButtonStyle}" RelativePanel.AlignRightWithPanel="True" />
+
+		</RelativePanel>
 
 	</StackPanel>
 
