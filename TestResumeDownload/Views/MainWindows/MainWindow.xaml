@@ -8,9 +8,10 @@
     xmlns:windowex="using:WinUIEx"
     MinWidth="500"
     MinHeight="500"
+	Title="レジュームダウンロードのテストプログラム"
     PersistenceId="MainWindow"
     mc:Ignorable="d">
-    <Window.SystemBackdrop>
-        <MicaBackdrop/>
-    </Window.SystemBackdrop>
+	<Window.SystemBackdrop>
+		<MicaBackdrop/>
+	</Window.SystemBackdrop>
 </windowex:WindowEx>

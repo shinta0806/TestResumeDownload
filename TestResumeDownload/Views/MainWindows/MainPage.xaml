@@ -7,20 +7,20 @@
     Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
     mc:Ignorable="d">
 
-    <Grid x:Name="ContentArea">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="48" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
+	<StackPanel Margin="20" >
 
-        <TextBlock
-            Grid.Row="0"
-            x:Uid="Main_Title"
-            Style="{StaticResource PageTitleStyle}" />
+		<!-- URL -->
+		<StackPanel Orientation="Horizontal" >
+			<TextBlock Text="URL：" VerticalAlignment="Center" />
+			<TextBox Text="" Width="200" />
+		</StackPanel>
 
-        <Grid Grid.Row="1">
-            
-        </Grid>
-        
-    </Grid>
+		<!-- ダウンロードサイズ -->
+		<StackPanel Orientation="Horizontal" >
+			<TextBlock Text="ダウンロードサイズ：" VerticalAlignment="Center" />
+			<TextBox Text="" Width="50" />
+		</StackPanel>
+
+	</StackPanel>
+
 </Page>
