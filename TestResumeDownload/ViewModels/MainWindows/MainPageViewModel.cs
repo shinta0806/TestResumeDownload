@@ -79,6 +79,16 @@ internal partial class MainPageViewModel : ObservableRecipient
 		set => SetProperty(ref _isControlEnabled, value);
 	}
 
+	/// <summary>
+	/// 進捗（0～1）
+	/// </summary>
+	private Double _progressValue = 0;
+	public Double ProgressValue
+	{
+		get => _progressValue;
+		set => SetProperty(ref _progressValue, value);
+	}
+
 	// --------------------------------------------------------------------
 	// コマンド
 	// --------------------------------------------------------------------
@@ -109,6 +119,7 @@ internal partial class MainPageViewModel : ObservableRecipient
 		finally
 		{
 			IsControlEnabled = true;
+			ProgressValue = 0;
 		}
 	}
 	#endregion
@@ -171,6 +182,7 @@ internal partial class MainPageViewModel : ObservableRecipient
 		{
 			try
 			{
+				Int64 totalSize = TotalSize();
 				Int64 existingSize = 0;
 				if (File.Exists(DestPartialPath()))
 				{
@@ -186,10 +198,22 @@ internal partial class MainPageViewModel : ObservableRecipient
 				using Stream contentStream = response.Content.ReadAsStream();
 				Byte[] buffer = new Byte[2048];
 				Int32 bytesRead;
+				Int64 totalBytesRead = 0;
+				Int32 count = 0;
 
 				while ((bytesRead = contentStream.Read(buffer, 0, buffer.Length)) > 0)
 				{
 					fileStream.Write(buffer, 0, bytesRead);
+					totalBytesRead += bytesRead;
+					count++;
+					if (count % 500 == 0)
+					{
+						// 進捗表示
+						App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+						{
+							ProgressValue = (Double)(existingSize + totalBytesRead) / totalSize;
+						});
+					}
 				}
 				return null;
 			}
@@ -234,5 +258,21 @@ internal partial class MainPageViewModel : ObservableRecipient
 			XamlRoot = App.MainWindow.Content.XamlRoot,
 		};
 		await contentDialog.ShowAsync();
+	}
+
+	/// <summary>
+	/// 総ファイルサイズを取得
+	/// </summary>
+	/// <returns></returns>
+	private Int64 TotalSize()
+	{
+		using HttpRequestMessage request = new(HttpMethod.Head, Url);
+		using HttpResponseMessage response = _client.Send(request, HttpCompletionOption.ResponseHeadersRead);
+		response.EnsureSuccessStatusCode();
+		if (!response.Content.Headers.ContentLength.HasValue)
+		{
+			throw new Exception("サーバー上のファイルサイズが不明です。");
+		}
+		return response.Content.Headers.ContentLength.Value;
 	}
 }
