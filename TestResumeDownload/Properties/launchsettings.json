@@ -1,0 +1,10 @@
+﻿{
+    "profiles": {
+      "TestResumeDownload (Package)": {
+        "commandName": "MsixPackage"
+      },
+      "TestResumeDownload (Unpackaged)": {
+        "commandName": "Project"
+      }
+    }
+}
