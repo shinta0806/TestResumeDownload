@@ -1,6 +1,6 @@
 using TestResumeDownload.Views;
 
-namespace TestResumeDownload;
+namespace TestResumeDownload.Views.MainWindows;
 
 public sealed partial class MainWindow : WindowEx
 {

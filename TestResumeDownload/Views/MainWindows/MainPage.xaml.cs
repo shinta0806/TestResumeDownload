@@ -2,11 +2,11 @@ using Microsoft.UI.Xaml.Controls;
 
 using TestResumeDownload.ViewModels;
 
-namespace TestResumeDownload.Views;
+namespace TestResumeDownload.Views.MainWindows;
 
 public sealed partial class MainPage : Page
 {
-	public MainViewModel ViewModel
+	public MainPageViewModel ViewModel
 	{
 		get;
 	}
