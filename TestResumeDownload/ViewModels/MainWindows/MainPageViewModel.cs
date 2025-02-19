@@ -182,6 +182,7 @@ internal partial class MainPageViewModel : ObservableRecipient
 		{
 			try
 			{
+				// 総サイズと、既にダウンロード済のサイズ
 				Int64 totalSize = TotalSize();
 				Int64 existingSize = 0;
 				if (File.Exists(DestPartialPath()))
@@ -189,32 +190,49 @@ internal partial class MainPageViewModel : ObservableRecipient
 					existingSize = new FileInfo(DestPartialPath()).Length;
 				}
 
+				// リクエスト時に Range でレジューム位置（ダウンロード済サイズ）を指定
 				using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, Url);
 				request.Headers.Range = new(existingSize, null);
 				using HttpResponseMessage response = _client.Send(request, HttpCompletionOption.ResponseHeadersRead);
 				response.EnsureSuccessStatusCode();
 
-				using FileStream fileStream = new FileStream(DestPartialPath(), FileMode.Append, FileAccess.Write, FileShare.None);
-				using Stream contentStream = response.Content.ReadAsStream();
-				Byte[] buffer = new Byte[2048];
-				Int32 bytesRead;
-				Int64 totalBytesRead = 0;
-				Int32 count = 0;
-
-				while ((bytesRead = contentStream.Read(buffer, 0, buffer.Length)) > 0)
+				// 読み書きストリームの準備
+				using (FileStream destStream = new FileStream(DestPartialPath(), FileMode.Append, FileAccess.Write, FileShare.None))
 				{
-					fileStream.Write(buffer, 0, bytesRead);
-					totalBytesRead += bytesRead;
-					count++;
-					if (count % 500 == 0)
+					using Stream contentStream = response.Content.ReadAsStream();
+					Byte[] buffer = new Byte[2048];
+					Int32 bytesRead;
+					Int64 totalBytesRead = 0;
+					Int32 count = 0;
+
+					while ((bytesRead = contentStream.Read(buffer, 0, buffer.Length)) > 0)
 					{
-						// 進捗表示
-						App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+						// 応答内容をファイルに書き込む
+						destStream.Write(buffer, 0, bytesRead);
+
+						// 一定期間ごとに進捗表示
+						totalBytesRead += bytesRead;
+						count++;
+						if (count % 100 == 0)
 						{
-							ProgressValue = (Double)(existingSize + totalBytesRead) / totalSize;
-						});
+							App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+							{
+								ProgressValue = (Double)(existingSize + totalBytesRead) / totalSize;
+							});
+						}
 					}
 				}
+
+				// ダウンロード完了したのでリネーム
+				try
+				{
+					File.Delete(DestPath());
+				}
+				catch (Exception)
+				{
+				}
+				File.Move(DestPartialPath(), DestPath());
+
 				return null;
 			}
 			catch (Exception ex)
