@@ -22,10 +22,10 @@
 			<TextBox Text="{x:Bind ViewModel.DestFolder, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="400" IsEnabled="{x:Bind ViewModel.IsControlEnabled, Mode=OneWay}" />
 		</StackPanel>
 
-		<!-- ダウンロードサイズ -->
+		<!-- 中断サイズ -->
 		<StackPanel Orientation="Horizontal" Margin="0,10,0,0" >
-			<TextBlock Text="ダウンロードサイズ：" Width="130" HorizontalTextAlignment="Right" VerticalAlignment="Center" />
-			<TextBox Text="{x:Bind ViewModel.DownloadSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="50" MinWidth="50" TextAlignment="Right" 
+			<TextBlock Text="中断サイズ：" Width="130" HorizontalTextAlignment="Right" VerticalAlignment="Center" />
+			<TextBox Text="{x:Bind ViewModel.AbortSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="50" MinWidth="50" TextAlignment="Right" 
 					 IsEnabled="{x:Bind ViewModel.IsControlEnabled, Mode=OneWay}" />
 			<TextBlock Text="MB" VerticalAlignment="Center" Margin="10,0,0,0" />
 		</StackPanel>

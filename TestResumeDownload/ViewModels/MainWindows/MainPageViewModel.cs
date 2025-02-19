@@ -60,13 +60,13 @@ internal partial class MainPageViewModel : ObservableRecipient
 	}
 
 	/// <summary>
-	/// ダウンロードサイズ [MB]
+	/// 中断サイズ [MB]
 	/// </summary>
-	private Int32 _downloadSize = 5;
-	public Int32 DownloadSize
+	private Int32 _abortSize = 5;
+	public Int32 AbortSize
 	{
-		get => _downloadSize;
-		set => SetProperty(ref _downloadSize, value);
+		get => _abortSize;
+		set => SetProperty(ref _abortSize, value);
 	}
 
 	/// <summary>
@@ -105,12 +105,23 @@ internal partial class MainPageViewModel : ObservableRecipient
 		{
 			IsControlEnabled = false;
 			CheckInput();
-			Exception? ex = await DownloadAsync();
+			(Int64 existingSize, Exception? ex) = await DownloadAsync();
 			if (ex != null)
 			{
 				throw ex;
 			}
-			await ShowContentDialogAsync("完了", "完了");
+
+			// ダウンロードした範囲
+			String range = existingSize.ToString("#,0") + " ～ ";
+			if (File.Exists(DestPartialPath()))
+			{
+				range += new FileInfo(DestPartialPath()).Length.ToString("#,0") + "（中断）";
+			}
+			else
+			{
+				range += new FileInfo(DestPath()).Length.ToString("#,0") + "（完了）";
+			}
+			await ShowContentDialogAsync("情報", range);
 		}
 		catch (Exception ex)
 		{
@@ -119,7 +130,6 @@ internal partial class MainPageViewModel : ObservableRecipient
 		finally
 		{
 			IsControlEnabled = true;
-			ProgressValue = 0;
 		}
 	}
 	#endregion
@@ -166,7 +176,7 @@ internal partial class MainPageViewModel : ObservableRecipient
 			throw new Exception("ダウンロードフォルダーを入力してください。");
 		}
 		Directory.CreateDirectory(DestFolder);
-		if (DownloadSize <= 0)
+		if (AbortSize <= 0)
 		{
 			throw new Exception("ダウンロードサイズを入力してください。");
 		}
@@ -176,7 +186,7 @@ internal partial class MainPageViewModel : ObservableRecipient
 	/// ダウンロード
 	/// </summary>
 	/// <returns></returns>
-	private async Task<Exception?> DownloadAsync()
+	private async Task<(Int64, Exception?)> DownloadAsync()
 	{
 		return await Task.Run(() =>
 		{
@@ -194,6 +204,7 @@ internal partial class MainPageViewModel : ObservableRecipient
 				using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, Url);
 				request.Headers.Range = new(existingSize, null);
 				using HttpResponseMessage response = _client.Send(request, HttpCompletionOption.ResponseHeadersRead);
+				Debug.WriteLine("DownloadAsync() StatusCode: " + response.StatusCode);
 				response.EnsureSuccessStatusCode();
 
 				// 読み書きストリームの準備
@@ -209,6 +220,12 @@ internal partial class MainPageViewModel : ObservableRecipient
 					{
 						// 応答内容をファイルに書き込む
 						destStream.Write(buffer, 0, bytesRead);
+
+						// ダウンロードが中断サイズに達したら中断
+						if (totalBytesRead >= AbortSize * 1024 * 1024)
+						{
+							return (existingSize, (Exception?)null);
+						}
 
 						// 一定期間ごとに進捗表示
 						totalBytesRead += bytesRead;
@@ -233,11 +250,11 @@ internal partial class MainPageViewModel : ObservableRecipient
 				}
 				File.Move(DestPartialPath(), DestPath());
 
-				return null;
+				return (existingSize, null);
 			}
 			catch (Exception ex)
 			{
-				return ex;
+				return (0, ex);
 			}
 		});
 	}
