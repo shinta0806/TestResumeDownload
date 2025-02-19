@@ -232,13 +232,13 @@ internal partial class MainPageViewModel : ObservableRecipient
 						destStream.Write(buffer, 0, bytesRead);
 
 						// ダウンロードが中断サイズに達したら中断
+						totalBytesRead += bytesRead;
 						if (totalBytesRead >= AbortSize * 1024 * 1024)
 						{
 							return (existingSize, (Exception?)null);
 						}
 
 						// 一定期間ごとに進捗表示
-						totalBytesRead += bytesRead;
 						count++;
 						if (count % 100 == 0)
 						{
