@@ -27,6 +27,9 @@ internal partial class MainPageViewModel : ObservableRecipient
 	/// </summary>
 	public MainPageViewModel()
 	{
+		// 初期化
+		_progress = new(ProgressChanged);
+
 		// コマンド
 		ButtonDownloadClickedCommand = new(ButtonDownloadClicked);
 	}
@@ -158,6 +161,11 @@ internal partial class MainPageViewModel : ObservableRecipient
 	/// </summary>
 	private static readonly HttpClient _client = new();
 
+	/// <summary>
+	/// 進捗通知
+	/// </summary>
+	private readonly Progress<Double> _progress;
+
 	// ====================================================================
 	// private 関数
 	// ====================================================================
@@ -204,6 +212,8 @@ internal partial class MainPageViewModel : ObservableRecipient
 				using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, Url);
 				request.Headers.Range = new(existingSize, null);
 				using HttpResponseMessage response = _client.Send(request, HttpCompletionOption.ResponseHeadersRead);
+
+				// レジューム対応のサーバーからは PartialContent が返る。未対応サーバーは未確認
 				Debug.WriteLine("DownloadAsync() StatusCode: " + response.StatusCode);
 				response.EnsureSuccessStatusCode();
 
@@ -232,10 +242,7 @@ internal partial class MainPageViewModel : ObservableRecipient
 						count++;
 						if (count % 100 == 0)
 						{
-							App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-							{
-								ProgressValue = (Double)(existingSize + totalBytesRead) / totalSize;
-							});
+							((IProgress<Double>)_progress).Report((Double)(existingSize + totalBytesRead) / totalSize);
 						}
 					}
 				}
@@ -249,6 +256,7 @@ internal partial class MainPageViewModel : ObservableRecipient
 				{
 				}
 				File.Move(DestPartialPath(), DestPath());
+				((IProgress<Double>)_progress).Report(1);
 
 				return (existingSize, null);
 			}
@@ -275,6 +283,16 @@ internal partial class MainPageViewModel : ObservableRecipient
 	private String DestPath()
 	{
 		return Path.Combine(DestFolder, Path.GetFileName(Url));
+	}
+
+	/// <summary>
+	/// イベントハンドラー
+	/// </summary>
+	/// <param name="progress"></param>
+	private void ProgressChanged(Double progress)
+	{
+		// インスタンスの作成時の SynchronizationContext で呼ばれるので UI を変更可能
+		ProgressValue = progress;
 	}
 
 	/// <summary>
