@@ -46,10 +46,10 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-	  <NoWarn>IDE0007</NoWarn>
+	  <NoWarn>IDE0007;IDE0049</NoWarn>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-	  <NoWarn>IDE0007</NoWarn>
+	  <NoWarn>IDE0007;IDE0049</NoWarn>
 	</PropertyGroup>
 </Project>

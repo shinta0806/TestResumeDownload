@@ -209,7 +209,7 @@ internal partial class MainPageViewModel : ObservableRecipient
 				}
 
 				// リクエスト時に Range でレジューム位置（ダウンロード済サイズ）を指定
-				using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, Url);
+				using HttpRequestMessage request = new(HttpMethod.Get, Url);
 				request.Headers.Range = new(existingSize, null);
 				using HttpResponseMessage response = _client.Send(request, HttpCompletionOption.ResponseHeadersRead);
 
@@ -218,7 +218,7 @@ internal partial class MainPageViewModel : ObservableRecipient
 				response.EnsureSuccessStatusCode();
 
 				// 読み書きストリームの準備
-				using (FileStream destStream = new FileStream(DestPartialPath(), FileMode.Append, FileAccess.Write, FileShare.None))
+				using (FileStream destStream = new(DestPartialPath(), FileMode.Append, FileAccess.Write, FileShare.None))
 				{
 					using Stream contentStream = response.Content.ReadAsStream();
 					Byte[] buffer = new Byte[2048];
@@ -301,7 +301,7 @@ internal partial class MainPageViewModel : ObservableRecipient
 	/// <param name="title"></param>
 	/// <param name="message"></param>
 	/// <returns></returns>
-	private async Task ShowContentDialogAsync(String title, String message)
+	private static async Task ShowContentDialogAsync(String title, String message)
 	{
 		ContentDialog contentDialog = new()
 		{
