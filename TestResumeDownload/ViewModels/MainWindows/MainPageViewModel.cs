@@ -108,11 +108,7 @@ internal partial class MainPageViewModel : ObservableRecipient
 		{
 			IsControlEnabled = false;
 			CheckInput();
-			(Int64 existingSize, Exception? ex) = await DownloadAsync();
-			if (ex != null)
-			{
-				throw ex;
-			}
+			Int64 existingSize = await DownloadAsync();
 
 			// ダウンロードした範囲
 			String range = existingSize.ToString("#,0") + " ～ ";
@@ -194,76 +190,69 @@ internal partial class MainPageViewModel : ObservableRecipient
 	/// ダウンロード
 	/// </summary>
 	/// <returns></returns>
-	private async Task<(Int64, Exception?)> DownloadAsync()
+	private async Task<Int64> DownloadAsync()
 	{
 		return await Task.Run(() =>
 		{
-			try
+			// 総サイズと、既にダウンロード済のサイズ
+			Int64 totalSize = TotalSize();
+			Int64 existingSize = 0;
+			if (File.Exists(DestPartialPath()))
 			{
-				// 総サイズと、既にダウンロード済のサイズ
-				Int64 totalSize = TotalSize();
-				Int64 existingSize = 0;
-				if (File.Exists(DestPartialPath()))
+				existingSize = new FileInfo(DestPartialPath()).Length;
+			}
+
+			// リクエスト時に Range でレジューム位置（ダウンロード済サイズ）を指定
+			using HttpRequestMessage request = new(HttpMethod.Get, Url);
+			request.Headers.Range = new(existingSize, null);
+			using HttpResponseMessage response = _client.Send(request, HttpCompletionOption.ResponseHeadersRead);
+
+			// レジューム対応のサーバーからは PartialContent が返る。未対応サーバーは未確認
+			Debug.WriteLine("DownloadAsync() StatusCode: " + response.StatusCode);
+			response.EnsureSuccessStatusCode();
+
+			// 読み書きストリームの準備
+			using (FileStream destStream = new(DestPartialPath(), FileMode.Append, FileAccess.Write, FileShare.None))
+			{
+				using Stream contentStream = response.Content.ReadAsStream();
+				Byte[] buffer = new Byte[2048];
+				Int32 bytesRead;
+				Int64 totalBytesRead = 0;
+				Int32 count = 0;
+
+				while ((bytesRead = contentStream.Read(buffer, 0, buffer.Length)) > 0)
 				{
-					existingSize = new FileInfo(DestPartialPath()).Length;
-				}
+					// 応答内容をファイルに書き込む
+					destStream.Write(buffer, 0, bytesRead);
 
-				// リクエスト時に Range でレジューム位置（ダウンロード済サイズ）を指定
-				using HttpRequestMessage request = new(HttpMethod.Get, Url);
-				request.Headers.Range = new(existingSize, null);
-				using HttpResponseMessage response = _client.Send(request, HttpCompletionOption.ResponseHeadersRead);
-
-				// レジューム対応のサーバーからは PartialContent が返る。未対応サーバーは未確認
-				Debug.WriteLine("DownloadAsync() StatusCode: " + response.StatusCode);
-				response.EnsureSuccessStatusCode();
-
-				// 読み書きストリームの準備
-				using (FileStream destStream = new(DestPartialPath(), FileMode.Append, FileAccess.Write, FileShare.None))
-				{
-					using Stream contentStream = response.Content.ReadAsStream();
-					Byte[] buffer = new Byte[2048];
-					Int32 bytesRead;
-					Int64 totalBytesRead = 0;
-					Int32 count = 0;
-
-					while ((bytesRead = contentStream.Read(buffer, 0, buffer.Length)) > 0)
+					// ダウンロードが中断サイズに達したら中断
+					totalBytesRead += bytesRead;
+					if (totalBytesRead >= AbortSize * 1024 * 1024)
 					{
-						// 応答内容をファイルに書き込む
-						destStream.Write(buffer, 0, bytesRead);
+						return existingSize;
+					}
 
-						// ダウンロードが中断サイズに達したら中断
-						totalBytesRead += bytesRead;
-						if (totalBytesRead >= AbortSize * 1024 * 1024)
-						{
-							return (existingSize, (Exception?)null);
-						}
-
-						// 一定期間ごとに進捗表示
-						count++;
-						if (count % 100 == 0)
-						{
-							((IProgress<Double>)_progress).Report((Double)(existingSize + totalBytesRead) / totalSize);
-						}
+					// 一定期間ごとに進捗表示
+					count++;
+					if (count % 100 == 0)
+					{
+						((IProgress<Double>)_progress).Report((Double)(existingSize + totalBytesRead) / totalSize);
 					}
 				}
-
-				// ダウンロード完了したのでリネーム
-				try
-				{
-					File.Delete(DestPath());
-				}
-				catch (Exception)
-				{
-				}
-				File.Move(DestPartialPath(), DestPath());
-				((IProgress<Double>)_progress).Report(1);
-
-				return (existingSize, null);
 			}
-			catch (Exception ex)
+
+			// ダウンロード完了したのでリネーム
+			try
 			{
-				return (0, ex);
+				File.Delete(DestPath());
 			}
+			catch (Exception)
+			{
+			}
+			File.Move(DestPartialPath(), DestPath());
+			((IProgress<Double>)_progress).Report(1);
+
+			return existingSize;
 		});
 	}
 
