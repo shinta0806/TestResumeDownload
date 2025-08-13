@@ -28,7 +28,7 @@ internal partial class MainPageViewModel : ObservableRecipient
 	public MainPageViewModel()
 	{
 		// 初期化
-		_progress = new(ProgressChanged);
+		_progress = new Progress<Double>(ProgressChanged);
 
 		// コマンド
 		ButtonDownloadClickedCommand = new(ButtonDownloadClicked);
@@ -160,7 +160,7 @@ internal partial class MainPageViewModel : ObservableRecipient
 	/// <summary>
 	/// 進捗通知
 	/// </summary>
-	private readonly Progress<Double> _progress;
+	private readonly IProgress<Double> _progress;
 
 	// ====================================================================
 	// private 関数
@@ -236,7 +236,7 @@ internal partial class MainPageViewModel : ObservableRecipient
 					count++;
 					if (count % 100 == 0)
 					{
-						((IProgress<Double>)_progress).Report((Double)(existingSize + totalBytesRead) / totalSize);
+						_progress.Report((Double)(existingSize + totalBytesRead) / totalSize);
 					}
 				}
 			}
@@ -250,7 +250,7 @@ internal partial class MainPageViewModel : ObservableRecipient
 			{
 			}
 			File.Move(DestPartialPath(), DestPath());
-			((IProgress<Double>)_progress).Report(1);
+			_progress.Report(1);
 
 			return existingSize;
 		});
